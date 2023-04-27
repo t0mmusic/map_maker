@@ -8,9 +8,10 @@ GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 CYAN = (0, 255, 255)
+PINK = (255, 0, 255)
 # Define window size
-WIDTH = 800
-HEIGHT = 600
+WIDTH = 500
+HEIGHT = 500
 
 class	map_class:
 	def __init__(self):
@@ -91,14 +92,14 @@ class	pygame_stuff:
 		# Draw the tiles
 		for y in range(map.map_height):
 			for x in range(map.map_width):
-				text = text = self.my_font.render('', False, (0, 0, 0))
+				text = self.my_font.render('', False, (0, 0, 0))
 				rect = pygame.Rect(x * map.tile_width, y * map.tile_height, map.tile_width, map.tile_height)
 				if map.map_data[y][x] == "0":
 					pygame.draw.rect(self.screen, GREEN, rect)
 				elif map.map_data[y][x] == "1":
 					pygame.draw.rect(self.screen, BLACK, rect)
 				elif map.map_data[y][x] == "P":
-					pygame.draw.rect(self.screen, RED, rect)
+					pygame.draw.rect(self.screen, PINK, rect)
 					text = self.my_font.render('Player', False, (0, 0, 0))
 				elif map.map_data[y][x] == "B":
 					pygame.draw.rect(self.screen, RED, rect)
