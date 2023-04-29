@@ -17,8 +17,8 @@ class random_map:
 		self.wall = '1'
 		self.cell = '0'
 		self.unvisited = 'u'
-		self.height = random.randint(5, 20)
-		self.width = random.randint(5, 20)
+		self.height = random.randint(25, 50)
+		self.width = random.randint(25, 50)
 		self.maze = []
 
 ## Functions
