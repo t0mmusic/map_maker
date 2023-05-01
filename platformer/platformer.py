@@ -11,8 +11,8 @@ vec = pygame.math.Vector2
 HEIGHT = 550
 WIDTH = 1000
 TILESIZE = 50
-ACC = 0.5
-FRIC = -0.13
+ACC = 0.6
+FRIC = -0.12
 FPS = 60
 GRAVITY = 0.6
  
@@ -122,18 +122,16 @@ class Player(Entity):
 				hit.player_hit() # this behaviour should depend on the type of platform
 				break
 			# player has collided with left wall
-			if (right_diff > bottom_diff and right_diff > left_diff and right_diff > top_diff):
+			if (right_diff > bottom_diff and right_diff > left_diff and right_diff > top_diff and top_diff < 90):
 				self.rect.left = hit.rect.right
-				self.pos.x = self.rect.midbottom[0]
-				self.vel.x = -self.vel.x
-				self.acc.x = -self.acc.x
+				self.pos.x = self.rect.midbottom[0] - self.vel.x
+				self.vel.x = 0
 				break
 			# player has collided with right wall
 			if (left_diff > bottom_diff and left_diff > right_diff and left_diff > top_diff):
 				self.rect.right = hit.rect.left
-				self.pos.x = self.rect.midbottom[0]
-				self.vel.x = -self.vel.x
-				self.acc.x = -self.acc.x
+				self.pos.x = self.rect.midbottom[0] - self.vel.x
+				self.vel.x = 0
 				break							
 			# player has landed on platform
 			if (top_diff > bottom_diff and top_diff > right_diff and top_diff > left_diff):
@@ -151,7 +149,7 @@ class Enemy(Entity):
 	def __init__(self, x, y):
 		super().__init__(x, y)
 		self.surf.fill((0, 255, 0))
-		self.pos.y += TILESIZE
+		# self.pos.y += TILESIZE / 2
 		self.vel = vec(-1.5, 0)
 
 	def move(self):
@@ -233,8 +231,8 @@ class Map:
 					break
 				# once the player reaches the center of the screen, it will stop moving right
 				# and everything else will start moving left instead
-				# if (self.player.vel.x > 0):	
-				sprite.pos.x -= self.player.vel.x
+				if (self.player.vel.x > 0):	
+					sprite.pos.x -= self.player.vel.x
 			if (self.end == True):
 				for sprite in all_sprites:
 					sprite.rect.right += dist
