@@ -3,12 +3,14 @@ from pygame.locals import *
 import sys
 import random
 import os.path
+import math
  
 pygame.init()
 vec = pygame.math.Vector2 #2 for two dimensional
  
 HEIGHT = 550
 WIDTH = 550
+TILESIZE = 50
 ACC = 0.5
 FRIC = -0.12
 FPS = 60
@@ -17,7 +19,9 @@ FramePerSec = pygame.time.Clock()
  
 displaysurface = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Game")
- 
+
+flag = True
+
 class Player(pygame.sprite.Sprite):
 	def __init__(self, x, y):
 		super().__init__()
@@ -46,13 +50,13 @@ class Player(pygame.sprite.Sprite):
 		self.vel += self.acc
 		self.pos += self.vel + 0.5 * self.acc
 		 
-		if self.pos.x > WIDTH:
+		if self.pos.x > WIDTH: # wrap around left to right
 			self.pos.x = 0
-		if self.pos.x < 0:
-			self.pos.x = WIDTH
+		if self.pos.x < TILESIZE / 2: # prevent player from going left of the screen
+			self.pos.x = TILESIZE // 2
 			 
 		self.rect.midbottom = self.pos
-		self.x = self.pos.x // 50
+		self.x = self.pos.x // TILESIZE
  
 	def jump(self):
 		hits = pygame.sprite.spritecollide(self, platforms, False)
@@ -63,23 +67,40 @@ class Player(pygame.sprite.Sprite):
 	def update(self):		
 		hits = pygame.sprite.spritecollide(self, platforms, False)
 		for hit in hits:
-			x_diff = abs(hits[0].rect.top - self.rect.bottom)
-			y_diff = abs(hit.rect.right - self.rect.left)
-			if (x_diff > 15 and y_diff > 0):
-				if self.vel.x < 0:
-					self.rect.left = hits[0].rect.right
-				else:
-					self.rect.right = hits[0].rect.left
+			top_diff = abs(hit.rect.bottom - self.rect.top)
+			bottom_diff = abs(hit.rect.top - self.rect.bottom)
+			right_diff = abs(hit.rect.left - self.rect.right)
+			left_diff = abs(hit.rect.right - self.rect.left)
+			# player has collided with ceiling
+			if (bottom_diff > right_diff and bottom_diff > left_diff and bottom_diff > top_diff):
+				print("bottom")
+				self.rect.top = hit.rect.bottom
+				self.pos[1] = self.rect.midbottom[1]
+				self.vel.y = -self.vel.y
+				self.acc.y = -self.acc.y
+				break
+			# player has collided with left wall
+			if (right_diff > bottom_diff and right_diff > left_diff and right_diff > top_diff):
+				print("right")
+				self.rect.left = hit.rect.right
 				self.pos[0] = self.rect.midbottom[0]
 				self.vel.x = -self.vel.x
 				self.acc.x = -self.acc.x
 				break
-		hits = pygame.sprite.spritecollide(self, platforms, False)
-		if self.vel.y > 0:        
-			if hits:
-				if (x_diff < 25): # number must be adjusted for velocity
+			# player has collided with right wall
+			if (left_diff > bottom_diff and left_diff > right_diff and left_diff > top_diff):
+				print("left")
+				self.rect.right = hit.rect.left
+				self.pos[0] = self.rect.midbottom[0]
+				self.vel.x = -self.vel.x
+				self.acc.x = -self.acc.x
+				break							
+			# player has landed on platform
+			if (top_diff > bottom_diff and top_diff > right_diff and top_diff > left_diff):
+				if self.vel.y > 0:        
 					self.vel.y = 0
-					self.pos.y = hits[0].rect.top + 1
+					self.pos.y = hit.rect.top + 1
+				break
  
  
 class platform(pygame.sprite.Sprite):
@@ -98,7 +119,8 @@ class platform(pygame.sprite.Sprite):
 		self.rect = self.surf.get_rect(topleft = (x * 50, y * 50))
  
 	def move(self):
-		pass
+		if self.rect.right < -TILESIZE:
+			self.kill()
 
 class Map:
 	def __init__(self):
@@ -116,6 +138,7 @@ class Map:
 		self.height = len(self.lines)
 		self.w = int(WIDTH / (len(line) - 1))
 		self.h = int(HEIGHT / len(self.lines))
+		print(self.width, self.w)
 		for y in range(0, self.height):
 			for x in range(0, self.width - 1):
 				if self.lines[y][x] == "1":
@@ -123,7 +146,23 @@ class Map:
 					platforms.add(wall)			
 				if self.lines[y][x] == "P":
 					self.player = Player(x, y)
+					self.player_pos = self.player.x
 					all_sprites.add(self.player)
+
+	def update(self):
+		global flag
+		dist = 0
+		if (self.player.x > 6 and flag):
+			for sprite in platforms:
+				if (sprite.x == self.width - 2 and sprite.rect.right < WIDTH):
+					dist = WIDTH - sprite.rect.right
+					flag = False
+				if (self.player.vel[0] > 0):	
+					sprite.rect.right -= self.player.vel[0]
+			self.player.pos[0] -= self.player.vel[0]
+		if (dist):
+			for sprite in all_sprites:
+				sprite.rect.right += dist
 
 platforms = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
@@ -131,7 +170,6 @@ map = Map()
 map.import_map('platforms.txt')
 
 all_sprites.add(platforms)
- 
  
 while True: 
 	for event in pygame.event.get():
@@ -144,11 +182,12 @@ while True:
 		 
 	displaysurface.fill((0,0,0))
 	map.player.update()
+	map.update()
  
 	for sprite in all_sprites:
-		if (abs(map.player.x - sprite.x) < 5):
-			displaysurface.blit(sprite.surf, sprite.rect)
-			sprite.move()
+		# if (abs(map.player.x - sprite.x) < 5):
+		displaysurface.blit(sprite.surf, sprite.rect)
+		sprite.move()
 	# displaysurface.blit(map.player.image, (map.player.rect.x, map.player.rect.y))
  
 	pygame.display.update()
